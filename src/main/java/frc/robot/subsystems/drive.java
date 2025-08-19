@@ -74,7 +74,14 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 //然后，你负责任务a的开发，队友负责任务b的开发
 
 //第一天结束了，假设你们都开发了一半 ，你们怎么操作
-//
+
+//你们的功能都没经过完整的测试，能不能推送到main？
+
+//假设我推送到main     
+
+//你的提交被覆盖了
+
+
 
 
 
