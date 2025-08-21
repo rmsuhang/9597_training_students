@@ -1,2 +1,2 @@
-# This is a repository for JJ's code
+# This is a repository for Amira's code
 
