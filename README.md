@@ -1,2 +1,2 @@
-# This is a repository for Richard's code
+# This is a repository for JJ's code
 
