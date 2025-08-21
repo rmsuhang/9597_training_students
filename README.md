@@ -1,2 +1,2 @@
-# This is a repository for Belle's code
+# This is a repository for Landy's code
 
