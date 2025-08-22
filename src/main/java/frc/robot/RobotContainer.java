@@ -26,8 +26,7 @@ import frc.robot.subsystems.drive;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final drive m_drive_subsystenm = new drive();
-
+  private final drive m_drive_subSystem = new drive();
   // Replace with CommandPS4Controller or CommandJoystick if needed
   private final CommandXboxController m_driverController =
       new CommandXboxController(OperatorConstants.kDriverControllerPort);
@@ -56,7 +55,7 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.a().onTrue(m_drive_subsystenm.motor_switch());
+    m_driverController.a().onTrue(m_drive_subSystem.setmotorPosition(20,50));
     
   }
 

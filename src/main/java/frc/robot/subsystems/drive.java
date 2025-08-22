@@ -21,24 +21,30 @@ import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.subsystems.CANdleSystem;
 
 
 //基类：
 public class drive extends SubsystemBase {
-  private final CANdleSystem m_candle_subsystenm2 = new CANdleSystem();
 
   //声明电机
   private final TalonFX m_test_motor1 = new TalonFX(Constants.Motor.motor1_id, "rio");
   private final TalonFX m_test_motor2 = new TalonFX(Constants.Motor.motor2_id, "rio");
   //特性：请求制，需要一个request
-  private final VelocityTorqueCurrentFOC m_test_motor_request = new VelocityTorqueCurrentFOC(0.0);
+  private final MotionMagicVoltage m_test_motor1_request = new MotionMagicVoltage(0.0);
+  private final VelocityTorqueCurrentFOC m_test_motor2_request = new VelocityTorqueCurrentFOC(0.0);
 
   private final CANcoder cancoder_fl = new CANcoder(Constants.Cancoder.cancoder1_id, "rio");
 
   public drive() {
 
+    var motorEncoderConfigs = new CANcoderConfiguration();
+    motorEncoderConfigs.MagnetSensor.MagnetOffset=0.0;//offset
+    motorEncoderConfigs.MagnetSensor.AbsoluteSensorDiscontinuityPoint=0.5;
+    motorEncoderConfigs.MagnetSensor.SensorDirection=SensorDirectionValue.Clockwise_Positive;
+    cancoder_fl.getConfigurator().apply(motorEncoderConfigs);
 
+    var motorConfigs = new TalonFXConfiguration();
+    motorConfigs.Feedback.RotorToSensorRatio = 13;
 
     // 手动调整通常遵循以下过程：
 
@@ -62,9 +68,25 @@ public class drive extends SubsystemBase {
 
     // 尽可能增加，不要给响应带来抖动。
     //逐步增加kd直到引入了新的震动
-    
-    
-    
+
+    motorConfigs.Slot0.kS = 0.2;
+    motorConfigs.Slot0.kV = 0.0;
+    motorConfigs.Slot0.kA = 0;
+    motorConfigs.Slot0.kP = 3;
+    motorConfigs.Slot0.kI = 0;
+    motorConfigs.Slot0.kD = 0;
+    motorConfigs.MotionMagic.MotionMagicAcceleration = 100; // Acceleration is around 40 rps/s
+    motorConfigs.MotionMagic.MotionMagicCruiseVelocity = 200; // Unlimited cruise velocity
+    motorConfigs.MotionMagic.MotionMagicExpo_kV = 0.12; // kV is around 0.12 V/rps
+    motorConfigs.MotionMagic.MotionMagicExpo_kA = 0.1; // Use a slower kA of 0.1 V/(rps/s)
+    motorConfigs.MotionMagic.MotionMagicJerk = 0; // Jerk is around 0
+
+    motorConfigs.Feedback.FeedbackRemoteSensorID = cancoder_fl.getDeviceID();
+    motorConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+
+    m_test_motor1.getConfigurator().apply(motorConfigs);
+
+
     var motorEncoderConfigs2 = new CANcoderConfiguration();
     motorEncoderConfigs2.MagnetSensor.MagnetOffset=0.0;//offset
     motorEncoderConfigs2.MagnetSensor.AbsoluteSensorDiscontinuityPoint=0.5;
@@ -85,7 +107,6 @@ public class drive extends SubsystemBase {
     motorConfigs2.MotionMagic.MotionMagicJerk = 0; // Jerk is around 0
 
     m_test_motor2.getConfigurator().apply(motorConfigs2);
-    m_test_motor1.getConfigurator().apply(motorConfigs2);
 
     // m_test_motor2.getConfigurator().apply(motorConfigs);
     // m_test_motor3.getConfigurator().apply(motorConfigs);
@@ -105,53 +126,51 @@ public class drive extends SubsystemBase {
   //withPosition能够将高级的控制请求和底层的位置控制建立联系
   //withvelocity能够将高级的控制请求和底层的速度控制建立联系
 
-  // public void setmotorPosition(double pos) {
-  //   m_test_motor1.setControl(m_test_motor1_request.withPosition(pos));
-  // }
+  public void setmotorPosition(double pos) {
+    m_test_motor1.setControl(m_test_motor1_request.withPosition(pos));
+  }
 
   public void setmotorVelocity(double vol) {
-    
-    m_test_motor2.setControl(m_test_motor_request.withVelocity(vol));
-    m_test_motor1.setControl(m_test_motor_request.withVelocity(vol));
+    m_test_motor2.setControl(m_test_motor2_request.withVelocity(vol));
   }
 
-  int i = 0;
-  public Command motor_switch(){
-    return runOnce(()->{
-      if(i == 0){
-        i = 1;
-        m_candle_subsystenm2.setFire();
-        System.out.println(i);
-      }else if(i == 1){
-        i = -1;
-        m_candle_subsystenm2.setOff();
-        System.out.println(i);
-      }else if(i == -1){
-        i = 1;
-        m_candle_subsystenm2.setFire();
-        System.out.println(i);
-      }
-      
-      
-      motor_move();
-    });
 
-  }
+  double motorPosition = 0.0;
+  double targetPosition = 0.0;
+  double acceptableError = 0.2;
 
-public void motor_move(){
-    if(i == 1){
-      m_test_motor1.setControl(m_test_motor_request.withVelocity(5));
-      m_test_motor2.setControl(m_test_motor_request.withVelocity(10));
+  public boolean IsAtPosition(double Position){
+    motorPosition = m_test_motor1.getPosition().getValueAsDouble(); // Get the current position of the motor
 
-    }else if(i == -1){
-      m_test_motor1.setControl(m_test_motor_request.withVelocity(-5));
-      m_test_motor2.setControl(m_test_motor_request.withVelocity(-10));
-
+    if(Math.abs(motorPosition - Position) <= acceptableError) {
+      return true; // The motor is within the acceptable error range of the target position
+    } else {
+      return false; // The motor is not at the target position
     }
   }
+
+  public Command Motor_Position_Velocity_command(double  Velocity,double  Position){
+    return run(()->{
+      setmotorPosition(Position); // Set the motor to move at 1000 units per second
+      setmotorVelocity(Velocity); 
+    })
+    .until(() -> IsAtPosition(Position))
+    .finallyDo(() -> {
+      setmotorVelocity(0);
+      setmotorPosition(getMotorPosition());
+    });
+  }
+
+  public Command Motor_Velocity_command(double  Velocity){
+    return runOnce(()->{
+      setmotorVelocity(Velocity);// Set the motor to move at 1000 units per second
+    });
+      
+    
+  }
+
+
 }
-
-
 
 //subsystem：
 //控制机器人
@@ -186,6 +205,3 @@ public void motor_move(){
 ////受限于电脑当时的情况或者配置
 //periodic()：每隔20毫秒循环一次
 //periodic()：检查仪一下的视觉检测效果，那我就可以在periodic里面写一个for和whlie
-
-
-
