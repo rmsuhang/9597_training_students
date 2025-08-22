@@ -23,28 +23,32 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.CANdleSystem;
 
+
+
 //基类：
-public class drive extends SubsystemBase {
+public class drive1 extends SubsystemBase {
+  private final CANdleSystem m_candle_subsystenm = new CANdleSystem();
 
   //声明电机
   private final TalonFX m_test_motor1 = new TalonFX(Constants.Motor.motor1_id, "rio");
   private final TalonFX m_test_motor2 = new TalonFX(Constants.Motor.motor2_id, "rio");
+
   //特性：请求制，需要一个request
   private final MotionMagicVoltage m_test_motor1_request = new MotionMagicVoltage(0.0);
+  private final MotionMagicVoltage m_test_motor2_request = new MotionMagicVoltage(0.0);
 
-  private final CANcoder cancoder_fl = new CANcoder(Constants.Cancoder.cancoder1_id, "rio");
-  private final CANdleSystem m_CANdleSystem = new CANdleSystem();
+  //private final CANcoder cancoder_fl = new CANcoder(Constants.Cancoder.cancoder1_id, "rio");
 
-  public drive() {
+  public drive1() {
 
-    var motorEncoderConfigs = new CANcoderConfiguration();
-    motorEncoderConfigs.MagnetSensor.MagnetOffset=0.0;//offset
-    motorEncoderConfigs.MagnetSensor.AbsoluteSensorDiscontinuityPoint=0.5;
-    motorEncoderConfigs.MagnetSensor.SensorDirection=SensorDirectionValue.Clockwise_Positive;
-    cancoder_fl.getConfigurator().apply(motorEncoderConfigs);
+    // var motorEncoderConfigs = new CANcoderConfiguration();
+    // motorEncoderConfigs.MagnetSensor.MagnetOffset=0.0;//offset
+    // motorEncoderConfigs.MagnetSensor.AbsoluteSensorDiscontinuityPoint=0.5;
+    // motorEncoderConfigs.MagnetSensor.SensorDirection=SensorDirectionValue.Clockwise_Positive;
+    // cancoder_fl.getConfigurator().apply(motorEncoderConfigs);
 
     var motorConfigs = new TalonFXConfiguration();
-    motorConfigs.Feedback.RotorToSensorRatio = 13;
+
 
     // 手动调整通常遵循以下过程：
 
@@ -81,8 +85,9 @@ public class drive extends SubsystemBase {
     motorConfigs.MotionMagic.MotionMagicExpo_kA = 0.1; // Use a slower kA of 0.1 V/(rps/s)
     motorConfigs.MotionMagic.MotionMagicJerk = 0; // Jerk is around 0
 
-    motorConfigs.Feedback.FeedbackRemoteSensorID = cancoder_fl.getDeviceID();
-    motorConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+    // motorConfigs.Feedback.FeedbackRemoteSensorID = cancoder_fl.getDeviceID();
+    // motorConfigs.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+    // motorConfigs.Feedback.RotorToSensorRatio = 13;
 
     m_test_motor1.getConfigurator().apply(motorConfigs);
 
@@ -113,12 +118,14 @@ public class drive extends SubsystemBase {
     // m_test_motor4.getConfigurator().apply(motorConfigs);
   }
 
-  public double getMotorPosition1() {
+  public double getMotorPosition() {
     return m_test_motor1.getPosition().getValueAsDouble();
   }
-  public double getMotorPosition2() {
+
+  public double getMotor2Position() {
     return m_test_motor2.getPosition().getValueAsDouble();
   }
+
   //实际控制
   //封装出来的方法
   //控制电机 1.控制电机位置
@@ -128,21 +135,21 @@ public class drive extends SubsystemBase {
   //withPosition能够将高级的控制请求和底层的位置控制建立联系
   //withvelocity能够将高级的控制请求和底层的速度控制建立联系
 
-  public void setmotorPosition1(double pos1) {
-    m_test_motor1.setControl(m_test_motor1_request.withPosition(pos1));
+    //   public void setmotorPosition(double pos) {
+    //     m_test_motor1.setControl(m_test_motor1_request.withPosition(pos));
+    //   }
+
+  public void setmotorPosition(double pos,double pos2) {
+    m_test_motor1.setControl(m_test_motor1_request.withPosition(pos));
+    m_test_motor2.setControl(m_test_motor2_request.withPosition(pos2));
   }
-  public void setmotorPosition2(double pos1) {
-    m_test_motor2.setControl(m_test_motor1_request.withPosition(pos1));
-  }
-  public void setmotorVelocity(double vol) {
-}
 
 
   double motorPosition = 0.0;
   double targetPosition = 0.0;
   double acceptableError = 0.2;
 
-  public boolean IsAtPosition1(double Position){
+  public boolean IsAtPosition(double Position){
     motorPosition = m_test_motor1.getPosition().getValueAsDouble(); // Get the current position of the motor
 
     if(Math.abs(motorPosition - Position) <= acceptableError) {
@@ -151,41 +158,16 @@ public class drive extends SubsystemBase {
       return false; // The motor is not at the target position
     }
   }
-  
-  public boolean IsAtPosition2(double Position){
+
+  public boolean IsAtPosition2(double Position2){
     motorPosition = m_test_motor2.getPosition().getValueAsDouble(); // Get the current position of the motor
 
-    if(Math.abs(motorPosition - Position) <= acceptableError) {
+    if(Math.abs(motorPosition - Position2) <= acceptableError) {
       return true; // The motor is within the acceptable error range of the target position
     } else {
       return false; // The motor is not at the target position
     }
   }
-
-  public Command Motor_Position_command1(double  pos1,double pos2){
-    return run(()->{
-      setmotorPosition1(pos1);// Set the motor to move at 1000 units per second
-      setmotorPosition2(pos2);// Set the motor to move at 1000 units per second
-    })
-    .until(() -> IsAtPosition1(pos1))
-    .andThen(() -> {
-      m_CANdleSystem.setFire();
-      setmotorPosition2(pos2);
-    })
-    .until(() -> IsAtPosition2(pos2))
-    .finallyDo(() -> {
-      m_CANdleSystem.setOff();
-    });
-  }
-
-  public Command Motor_Velocity_command(double  Velocity){
-    return runOnce(()->{
-      setmotorVelocity(Velocity);// Set the motor to move at 1000 units per second
-    });
-      
-    
-  }
-
 
 }
 

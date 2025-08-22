@@ -29,6 +29,7 @@ public final class Constants {
 
   public static class Cancoder{
     public static final int cancoder1_id = 1;
+    public static final int cancoder2_id = 2;
   }
   
 }
