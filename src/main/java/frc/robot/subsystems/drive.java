@@ -99,7 +99,7 @@ public class drive extends SubsystemBase {
     var motorEncoderConfigs = new CANcoderConfiguration();
     motorEncoderConfigs.MagnetSensor.AbsoluteSensorDiscontinuityPoint=0.5;//电机180°对应范围
     motorEncoderConfigs.MagnetSensor.SensorDirection=SensorDirectionValue.Clockwise_Positive;
-    motorEncoderConfigs.MagnetSensor.MagnetOffset=0.077393;//FL
+    motorEncoderConfigs.MagnetSensor.MagnetOffset=-0.077393;//FL
     test_cancoder1.getConfigurator().apply(motorEncoderConfigs);
     motorEncoderConfigs.MagnetSensor.MagnetOffset=0.297607;//FR
     test_cancoder2.getConfigurator().apply(motorEncoderConfigs);
