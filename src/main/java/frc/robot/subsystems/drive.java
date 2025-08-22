@@ -21,7 +21,7 @@ import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-
+import frc.robot.subsystems.CANdleSystem;
 
 //基类：
 public class drive extends SubsystemBase {
@@ -31,9 +31,9 @@ public class drive extends SubsystemBase {
   private final TalonFX m_test_motor2 = new TalonFX(Constants.Motor.motor2_id, "rio");
   //特性：请求制，需要一个request
   private final MotionMagicVoltage m_test_motor1_request = new MotionMagicVoltage(0.0);
-  private final VelocityTorqueCurrentFOC m_test_motor2_request = new VelocityTorqueCurrentFOC(0.0);
 
   private final CANcoder cancoder_fl = new CANcoder(Constants.Cancoder.cancoder1_id, "rio");
+  private final CANdleSystem m_CANdleSystem = new CANdleSystem();
 
   public drive() {
 
@@ -113,10 +113,12 @@ public class drive extends SubsystemBase {
     // m_test_motor4.getConfigurator().apply(motorConfigs);
   }
 
-  public double getMotorPosition() {
+  public double getMotorPosition1() {
     return m_test_motor1.getPosition().getValueAsDouble();
   }
-
+  public double getMotorPosition2() {
+    return m_test_motor2.getPosition().getValueAsDouble();
+  }
   //实际控制
   //封装出来的方法
   //控制电机 1.控制电机位置
@@ -126,20 +128,21 @@ public class drive extends SubsystemBase {
   //withPosition能够将高级的控制请求和底层的位置控制建立联系
   //withvelocity能够将高级的控制请求和底层的速度控制建立联系
 
-  public void setmotorPosition(double pos) {
-    m_test_motor1.setControl(m_test_motor1_request.withPosition(pos));
+  public void setmotorPosition1(double pos1) {
+    m_test_motor1.setControl(m_test_motor1_request.withPosition(pos1));
   }
-
+  public void setmotorPosition2(double pos1) {
+    m_test_motor2.setControl(m_test_motor1_request.withPosition(pos1));
+  }
   public void setmotorVelocity(double vol) {
-    m_test_motor2.setControl(m_test_motor2_request.withVelocity(vol));
-  }
+}
 
 
   double motorPosition = 0.0;
   double targetPosition = 0.0;
   double acceptableError = 0.2;
 
-  public boolean IsAtPosition(double Position){
+  public boolean IsAtPosition1(double Position){
     motorPosition = m_test_motor1.getPosition().getValueAsDouble(); // Get the current position of the motor
 
     if(Math.abs(motorPosition - Position) <= acceptableError) {
@@ -148,16 +151,30 @@ public class drive extends SubsystemBase {
       return false; // The motor is not at the target position
     }
   }
+  
+  public boolean IsAtPosition2(double Position){
+    motorPosition = m_test_motor2.getPosition().getValueAsDouble(); // Get the current position of the motor
 
-  public Command Motor_Position_Velocity_command(double  Velocity,double  Position){
+    if(Math.abs(motorPosition - Position) <= acceptableError) {
+      return true; // The motor is within the acceptable error range of the target position
+    } else {
+      return false; // The motor is not at the target position
+    }
+  }
+
+  public Command Motor_Position_command1(double  pos1,double pos2){
     return run(()->{
-      setmotorPosition(Position); // Set the motor to move at 1000 units per second
-      setmotorVelocity(Velocity); 
+      setmotorPosition1(pos1);// Set the motor to move at 1000 units per second
+      setmotorPosition2(pos2);// Set the motor to move at 1000 units per second
     })
-    .until(() -> IsAtPosition(Position))
+    .until(() -> IsAtPosition1(pos1))
+    .andThen(() -> {
+      m_CANdleSystem.setFire();
+      setmotorPosition2(pos2);
+    })
+    .until(() -> IsAtPosition2(pos2))
     .finallyDo(() -> {
-      setmotorVelocity(0);
-      setmotorPosition(getMotorPosition());
+      m_CANdleSystem.setOff();
     });
   }
 
