@@ -130,6 +130,7 @@ public class CANdleSystem extends SubsystemBase {    //属性
     
 
     public void FirewithMotor(){
+        System.out.println("fire");
         m_toAnimate = new FireAnimation(0.5, 0.7, LedCount, 0.7, 0.5);
     }
 
