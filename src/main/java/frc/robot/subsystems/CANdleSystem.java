@@ -34,7 +34,7 @@ public class CANdleSystem extends SubsystemBase {
     private final CANdle m_candle = new CANdle(Constants.Candle.candle1_id, "rio");
     private final int LedCount = 300;//灯珠数量，设备比较小，有可能灯带至亮一半
 
-    private Animation m_toAnimate = null;//要变换到新的状态
+    public Animation m_toAnimate = null;//要变换到新的状态
                                          //一种灯效 → 一种状态
 
     public enum AnimationTypes {//包含所有要教学的变量
@@ -99,19 +99,20 @@ public class CANdleSystem extends SubsystemBase {
     }
 
     public void setOff() {
+        System.out.println("xxxxxxx");
+            m_toAnimate=null;
             m_candle.animate(null);
             // m_candle.animate(null);
             // m_candle.setLEDs(0, 0, 0);
             m_candle.setLEDs(0, 0, 0);
-            changeAnimation(AnimationTypes.SetAll);
+         // changeAnimation(AnimationTypes.SetAll);
         
     }
 
-    public Command setFire() {
-        return run(() -> {
-            m_toAnimate = new FireAnimation(0.5, 0.7, LedCount, 0.7, 0.5);
-        });
-    }
+    public  void setFire() {
+            this.m_toAnimate = new FireAnimation(0.5, 0.7, LedCount, 0.7, 0.5);
+            System.out.println("asdfghjkl");
+        };
 
     public void FirewithMotor(){
         m_toAnimate = new FireAnimation(0.5, 0.7, LedCount, 0.7, 0.5);
@@ -205,7 +206,8 @@ public class CANdleSystem extends SubsystemBase {
         //                       (int)(joystick.getRightTriggerAxis() * 255), 
         //                       (int)(joystick.getLeftX() * 255));
         // } else {
-        m_candle.animate(m_toAnimate);
+        //System.out.print(m_toAnimate);
+        m_candle.animate(this.m_toAnimate);
         // }
        // m_candle.modulateVBatOutput(joystick.getRightY());
     }

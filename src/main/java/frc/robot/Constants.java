@@ -19,7 +19,7 @@ public final class Constants {
   }
 
   public static final class Candle{
-    public static final int candle1_id = 2;
+    public static final int candle1_id = 1;
   }
 
   public static class Motor{
